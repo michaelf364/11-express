@@ -6,7 +6,7 @@ const path = require("path");
 // Sets up the Express App
 // =============================================================
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Sets up the Express app to handle data parsing
 app.use(express.urlencoded({ extended: true }));
@@ -24,11 +24,6 @@ app.get("/", function (req, res) {
 
 app.get("/notes", function (req, res) {
     res.sendFile(path.join(__dirname, 'public', "notes.html"));
-});
-
-// Displays all characters
-app.get("/api/characters", function (req, res) {
-    return res.json(characters);
 });
 
 // Should read the `db.json` file and return all saved notes as JSON.
