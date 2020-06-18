@@ -3,88 +3,65 @@
 // We are linking our routes to a series of "data" sources.
 // These data sources hold arrays of information on table-data, waitinglist, etc.
 // ===============================================================================
-
-const tableData = require("../data/tableData");
-const waitListData = require("../data/waitinglistData");
-
+  
+const path = require("path");
+const db = require("../db/db.json");
+const fs = require("fs");
 
 // ===============================================================================
 // ROUTING
 // ===============================================================================
 
-module.exports = function(app) {
-  // API GET Requests
-  // Below code handles when users "visit" a page.
-  // In each of the below cases when a user visits a link
-  // (ex: localhost:PORT/api/admin... they are shown a JSON of the data in the table)
-  // ---------------------------------------------------------------------------
+module.exports = function (app) {
+    // API GET Requests
+    // Below code handles when users "visit" a page.
+    // In each of the below cases when a user visits a link
+    // (ex: localhost:PORT/api/admin... they are shown a JSON of the data in the table)
+    // ---------------------------------------------------------------------------
 
- // Should read the `db.json` file and return all saved notes as JSON.
-app.get("/api/notes", function (req, res) {
-    fs.readFile(path.join(__dirname, "db", "db.json"), 'utf8', (err, jsonString) => {
-        if (err) {
-            return console.log(err)
-        }
-        res.json(JSON.parse(jsonString));
-    })
-});
-
-// Should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
-app.post("/api/notes", function (req, res) {
-    let newNote = req.body;
-    newNote.id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    noteData.push(newNote);
-    let json = JSON.stringify(noteData);
-
-
-    fs.writeFile(path.join(__dirname, "../db/db.json"), json, "utf8", (err) => {
-        if (err) {
-            throw err;
-        }
+    // Should read the `db.json` file and return all saved notes as JSON.
+    app.get("/api/notes", function (req, res) {
+        fs.readFile(path.join(__dirname, "../db/db.json"), 'utf8', (err, jsonString) => {
+            if (err) {
+                return console.log(err)
+            }
+            res.json(JSON.parse(jsonString));
+        })
     });
-    res.json(req.body);
-});
 
-app.delete("/api/notes/:id", function (req, res) {
-    fs.readFile(path.join(__dirname, "db", "db.json"), 'utf8', (err, jsonString) => {
-        if (err) {
-            return console.log(err)
+    // Should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
+    app.post("/api/notes", function (req, res) {
+        let note = req.body;
+        note.id = Math.random().toString(16).slice(2);
+        db.push(note);
+        let json = JSON.stringify(db);
+
+        fs.writeFile(path.join(__dirname, "../db/db.json"), json, "utf8", (err) => {
+            if (err) {
+                throw err;
+            }
+        });
+        res.json(req.body);
+    });
+
+    //delete selected note
+    app.delete("/api/notes/:id", function (req, res) {
+        const id = req.params.id;
+        for (let index = 0; index < db.length; index++) {
+            const element = db[index];
+            if (element.id === id) {
+                db.splice(index, 1);
+                break;
+            };
         }
-        res.json(JSON.parse(jsonString));
-    })
-});
+        let json = JSON.stringify(db);
 
-  // API POST Requests
-  // Below code handles when a user submits a form and thus submits data to the server.
-  // In each of the below cases, when a user submits form data (a JSON object)
-  // ...the JSON is pushed to the appropriate JavaScript array
-  // (ex. User fills out a reservation request... this data is then sent to the server...
-  // Then the server saves the data to the tableData array)
-  // ---------------------------------------------------------------------------
 
-  app.post("/api/tables", function(req, res) {
-    // Note the code here. Our "server" will respond to requests and let users know if they have a table or not.
-    // It will do this by sending out the value "true" have a table
-    // req.body is available since we're using the body parsing middleware
-    if (tableData.length < 5) {
-      tableData.push(req.body);
-      res.json(true);
-    }
-    else {
-      waitListData.push(req.body);
-      res.json(false);
-    }
-  });
-
-  // ---------------------------------------------------------------------------
-  // I added this below code so you could clear out the table while working with the functionality.
-  // Don"t worry about it!
-
-  app.post("/api/clear", function(req, res) {
-    // Empty out the arrays of data
-    tableData.length = 0;
-    waitListData.length = 0;
-
-    res.json({ ok: true });
-  });
+        fs.writeFile(path.join(__dirname, "../db/db.json"), json, "utf8", (err) => {
+            if (err) {
+                throw err;
+            }
+        });
+        res.json(db);
+    });
 };
